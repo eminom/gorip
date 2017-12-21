@@ -32,7 +32,11 @@ var (
 
 func init() {
 	//_ = DefAl.LoadFromFile("iplist")
-	_ = DefAl.LoadFromBuffer(allowedConstantString)
+	decoded, err := decryptEncoded(allowedConstantString, hintKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_ = DefAl.LoadFromBuffer(string(decoded))
 }
 
 func (rl *RipIPList) LoadFromBuffer(c string) error {

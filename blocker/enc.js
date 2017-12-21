@@ -3,11 +3,22 @@
 const execFile = require('child_process').execFile;
 const fs = require('fs');
 const path = require('path');
+const doEncrypt = require('./aesutil').encrypt;
+const crypto = require('crypto');
 
 const nowdir = __dirname;
 const outName = "allow.go";
 
 const finOutName = () => path.join(nowdir, outName);
+
+
+function randHintKey() {
+    let rv = "";
+    for (let i = 0; i < 6; i++) {
+        rv += String.fromCharCode(Math.floor(Math.random() * 26) + 65);
+    }
+    return rv;
+}
 
 function loadChunk(filename, varname, curstr) {
     curstr = curstr ? curstr : "";
@@ -16,10 +27,18 @@ function loadChunk(filename, varname, curstr) {
             if (err) {
                 c(err);
             } else {
+                let hintKey = randHintKey() + "k)1`";
+                let sh = crypto.createHash('sha256');
+                sh.update(hintKey);
+                let key = sh.digest();
+                let hexStream = doEncrypt(`${chunk}`, key);
                 r(curstr + `
 const ${varname} = \`
-${chunk}
-\``);
+${hexStream.toString('hex')}
+\`
+
+const hintKey = "${hintKey}"
+`);
             }
         });
     });
