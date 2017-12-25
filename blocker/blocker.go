@@ -8,7 +8,12 @@ import (
 	"log"
 	"net"
 	"os"
+	"regexp"
 	"strings"
+)
+
+var (
+	ipv6pattern = regexp.MustCompile(`::(\d+)`)
 )
 
 type RipIPList map[string]bool
@@ -67,9 +72,15 @@ func (rl *RipIPList) loadFromReader(r *bufio.Reader) error {
 		var a, b, c, d int
 		line = strings.TrimSpace(line)
 		iCount, iErr := fmt.Sscanf(line, "%d.%d.%d.%d", &a, &b, &c, &d)
-		if 4 == iCount && iErr == nil {
-			rvs[net.IPv4(byte(a),
-				byte(b), byte(c), byte(d)).String()] = true
+		if nil == iErr {
+			if 4 == iCount {
+				rvs[net.IPv4(byte(a),
+					byte(b), byte(c), byte(d)).String()] = true
+			}
+		} else {
+			if ipv6pattern.MatchString(line) {
+				rvs[line] = true
+			}
 		}
 	}
 	*rl = rvs

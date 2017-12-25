@@ -64,7 +64,7 @@ func main() {
 	}
 
 	ln, err := conn.NewTcpListener(*addr, func(addr string) bool {
-		tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+		tcpAddr, err := net.ResolveTCPAddr("", addr)
 		if nil != err {
 			return false // unknown address(not tcp4 addr)
 		}
