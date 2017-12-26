@@ -30,7 +30,16 @@ func main() {
 		return
 	}
 	proxy := goproxy.NewProxyHttpServer()
-	proxy.OnRequest().Do(auth.Basic("despacito", xau.CheckUserPasswd))
+	if xau.HaySecret {
+		if *verbose {
+			log.Print("auth is on")
+		}
+		proxy.OnRequest().Do(auth.Basic("despacito", xau.CheckUserPasswd))
+	} else {
+		if *verbose {
+			log.Print("no auth at proxy")
+		}
+	}
 
 	// The old way
 	if false {

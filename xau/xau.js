@@ -9,31 +9,47 @@ const execFile = require('child_process').execFile;
 //console.log("DOS:", process.argv[2]);
 //console.log("***");
 
-if (process.argv.length < 4) {
-	console.error("not enough parameter");
-	process.exit(-1);
-}
+// if (process.argv.length < 4) {
+// 	console.error("not enough parameter");
+// 	process.exit(-1);
+// }
 
 const userName = process.argv[2];
 const userPassword = process.argv[3];
 
 const TargetFileName = 'xauconf.go';
 
-function doStart() {
-	return new Promise((r, c) => {
-		fs.writeFile(TargetFileName, `
+function getContent() {
+	let passStr = "", haySecret = "false";
+	if (userPassword && userName) {
+		passStr = (() => {
+			let sha256 = crypto.createHash('sha256');
+			sha256.update(userName + userPassword);
+			return sha256.digest('hex');
+		})();
+		haySecret = "true";
+	}
 
+	return `
 // This file is generated automatically.
 // ${new Date()}
 package xau
 
-const _hashSecret = "${(() => {
-				let sha256 = crypto.createHash('sha256');
-				sha256.update(userName + userPassword);
-				return sha256.digest('hex');
-			})()}"
+const (
 
-`, { encoding: 'utf8' },
+_hashSecret = "${passStr}"
+
+HaySecret = ${haySecret}
+)
+`;
+}
+
+
+
+function doStart() {
+	return new Promise((r, c) => {
+		fs.writeFile(TargetFileName, getContent(),
+			{ encoding: 'utf8' },
 			(err) => {
 				if (err) {
 					console.error(err);
