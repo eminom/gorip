@@ -72,14 +72,30 @@ func main() {
 		}
 	}
 
-	ln, err := conn.NewTcpListener(*addr, func(addr string) bool {
-		tcpAddr, err := net.ResolveTCPAddr("", addr)
-		if nil != err {
-			return false // unknown address(not tcp4 addr)
+	var (
+		ln  net.Listener
+		err error
+	)
+
+	if !blocker.DefAl.IsEmpty() {
+		if *verbose {
+			log.Printf("ip blocking-is on")
 		}
-		//log.Printf("filter tcp-addr: <%v>:<%v>", tcpAddr.IP, tcpAddr.Port)
-		return blocker.DefAl.IsAllowed(tcpAddr.IP)
-	})
+		ln, err = conn.NewTcpListener(*addr, func(addr string) bool {
+			tcpAddr, err := net.ResolveTCPAddr("", addr)
+			if nil != err {
+				return false // unknown address(not tcp4 addr)
+			}
+			//log.Printf("filter tcp-addr: <%v>:<%v>", tcpAddr.IP, tcpAddr.Port)
+			return blocker.DefAl.IsAllowed(tcpAddr.IP)
+		})
+	} else {
+		if *verbose {
+			log.Printf("no ip-blocking")
+		}
+		ln, err = net.Listen("tcp", *addr)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}

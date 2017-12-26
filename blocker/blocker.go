@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ipv6pattern = regexp.MustCompile(`::(\d+)`)
+	ipv6pattern = regexp.MustCompile(`^::(\d+)$`)
 )
 
 type RipIPList map[string]bool
@@ -29,6 +29,10 @@ func (r RipIPList) IsAllowed(ip net.IP) bool {
 	ips := ip.String()
 	_, ok := r[ips]
 	return ok
+}
+
+func (r RipIPList) IsEmpty() bool {
+	return len(r) == 0
 }
 
 var (
