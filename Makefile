@@ -1,6 +1,6 @@
 all:
 	go build -o rip
-	GOOS=linux GOARCH=amd64 go build -o rip-linux_amd64
+	GOOS=linux GOARCH=amd64 go build -o build/rip-linux_amd64
 
 format:
 	find . -type f -name "*.go" | xargs -i{} gofmt -w {}

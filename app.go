@@ -10,35 +10,38 @@ import (
 	"net/http"
 	"net/url"
 
-	"gorip/blocker"
-	"gorip/conn"
-	"gorip/xau"
+	"./blocker"
+	"./conn"
+	"./xau"
 )
+
+var (
+	verbose      = flag.Bool("v", false, "should every proxy request be logged to stdout")
+	addr         = flag.String("addr", ":8080", "proxy listen address")
+	showRipAhora = flag.Bool("showrip", false, "test rip-list")
+	nextHop      = flag.String("hop", "", "next hop for prxy")
+
+	bLog bool
+)
+
+func init() {
+	flag.BoolVar(&bLog, "log", false, "log for debugging")
+	bLog = true // remove this line when debug is done
+	flag.Parse()
+}
 
 func main() {
 
-	var (
-		verbose      = flag.Bool("v", false, "should every proxy request be logged to stdout")
-		addr         = flag.String("addr", ":8080", "proxy listen address")
-		showRipAhora = flag.Bool("showrip", false, "test rip-list")
-		nextHop      = flag.String("hop", "", "next hop for prxy")
-	)
-	flag.Parse()
-
+	*showRipAhora = true
 	if *showRipAhora {
 		blocker.DefAl.Dump()
-		return
 	}
 	proxy := goproxy.NewProxyHttpServer()
 	if xau.HaySecret {
-		if *verbose {
-			log.Print("auth is on")
-		}
+		log.Print("auth is on")
 		proxy.OnRequest().Do(auth.Basic("despacito", xau.CheckUserPasswd))
 	} else {
-		if *verbose {
-			log.Print("no auth at proxy")
-		}
+		log.Print("no auth at proxy")
 	}
 
 	// The old way
@@ -65,11 +68,13 @@ func main() {
 	if len(*nextHop) > 0 {
 		pUrl, err := url.Parse(*nextHop)
 		if nil == err {
-			if *verbose {
-				log.Printf("using proxy hop: %v", pUrl)
-			}
+			log.Printf("using proxy hop: %v", pUrl)
 			proxy.Tr.Proxy = http.ProxyURL(pUrl)
+		} else {
+			log.Printf("url.Pase error: %v", err)
 		}
+	} else {
+		log.Printf("proxy hop is disabled")
 	}
 
 	var (
@@ -78,9 +83,7 @@ func main() {
 	)
 
 	if !blocker.DefAl.IsEmpty() {
-		if *verbose {
-			log.Printf("ip blocking-is on")
-		}
+		log.Printf("ip blocking-is on")
 		ln, err = conn.NewTcpListener(*addr, func(addr string) bool {
 			tcpAddr, err := net.ResolveTCPAddr("", addr)
 			if nil != err {
@@ -90,9 +93,7 @@ func main() {
 			return blocker.DefAl.IsAllowed(tcpAddr.IP)
 		})
 	} else {
-		if *verbose {
-			log.Printf("no ip-blocking")
-		}
+		log.Printf("no ip-blocking")
 		ln, err = net.Listen("tcp", *addr)
 	}
 
@@ -102,6 +103,7 @@ func main() {
 	svr := http.Server{
 		Handler: proxy,
 	}
+	log.Printf("entering serve")
 	log.Fatal(svr.Serve(ln))
 	// log.Fatal(http.ListenAndServe(*addr, proxy))
 }

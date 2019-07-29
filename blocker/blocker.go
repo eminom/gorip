@@ -19,10 +19,11 @@ var (
 type RipIPList map[string]bool
 
 func (r RipIPList) Dump() {
-	log.Print("dump a rip-list **")
+	log.Print("** dump a rip-list **")
 	for ent := range r {
 		log.Print(ent)
 	}
+	log.Print("** ri-list dumped **")
 }
 
 func (r RipIPList) IsAllowed(ip net.IP) bool {
@@ -43,9 +44,15 @@ func init() {
 	//_ = DefAl.LoadFromFile("iplist")
 	decoded, err := decryptEncoded(allowedConstantString, hintKey)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	_ = DefAl.LoadFromBuffer(string(decoded))
+	log.Print("load buffer for blocker")
+	err = DefAl.LoadFromBuffer(string(decoded))
+	if err != nil {
+		log.Print("load for blocker error: %v", err)
+		return
+	}
+	log.Print("blocker buffer load done")
 }
 
 func (rl *RipIPList) LoadFromBuffer(c string) error {
@@ -78,6 +85,7 @@ func (rl *RipIPList) loadFromReader(r *bufio.Reader) error {
 		iCount, iErr := fmt.Sscanf(line, "%d.%d.%d.%d", &a, &b, &c, &d)
 		if nil == iErr {
 			if 4 == iCount {
+				log.Printf("<%v> is loaded", line)
 				rvs[net.IPv4(byte(a),
 					byte(b), byte(c), byte(d)).String()] = true
 			}
